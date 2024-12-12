@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:webapp/utils/utils.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class WebViewDemo extends StatefulWidget {
   const WebViewDemo({super.key});
@@ -22,7 +23,8 @@ class _WebViewDemoState extends State<WebViewDemo> {
       ..setNavigationDelegate(NavigationDelegate(
         onProgress: (int progress) {
           setState(() {
-            _isLoading = progress < 100; // Show loading if progress is less than 100%
+            _isLoading =
+                progress < 100; // Show loading if progress is less than 100%
           });
         },
         onPageStarted: (String url) {
@@ -37,33 +39,47 @@ class _WebViewDemoState extends State<WebViewDemo> {
         },
         onHttpError: (HttpResponseError error) {},
         onWebResourceError: (WebResourceError error) {},
-        onNavigationRequest: (NavigationRequest request) {
-          if (request.url.startsWith('https://www.youtube.com/')) {
-            return NavigationDecision.prevent;
+        onNavigationRequest: (NavigationRequest request) async {
+          if (!request.url.startsWith(Urls.linkUrls)) {
+            if (await canLaunchUrl(Uri.parse(request.url))) {
+              await launchUrl(
+                Uri.parse(request.url),
+                mode: LaunchMode.externalApplication,
+              );
+              return NavigationDecision.prevent;
+            }
           }
           return NavigationDecision.navigate;
         },
       ))
       ..loadRequest(Uri.parse(Urls.url)); // Replace with your URL
-
-
   }
-
-
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: Stack(
-          children: [
-            WebViewWidget(controller: controller),
-            if (_isLoading) // Display progress indicator if loading
-              const Center(
-                child: CircularProgressIndicator(color: Colors.red,),
-              ),
-          ],
+      // ignore: deprecated_member_use
+      child: WillPopScope(
+        onWillPop: () async {
+          if (await controller.canGoBack()) {
+            controller.goBack();
+            return false; // Prevent app exit
+          }
+          return true; // Allow app exit
+        },
+        child: Scaffold(
+          backgroundColor: Colors.white,
+          body: Stack(
+            children: [
+              WebViewWidget(controller: controller),
+              if (_isLoading) // Display progress indicator if loading
+                const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.red,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
