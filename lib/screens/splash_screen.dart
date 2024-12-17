@@ -22,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(seconds: 5), () {});
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const WebViewDemo()),
+        MaterialPageRoute(builder: (_) =>  WebViewDemo()),
         (route) => false);
   }
 
